@@ -1,0 +1,14 @@
+{
+  "name": "enblightforeffectshaders",
+  "version-string": "1.0.0",
+  "description": "ENB Light for Effect Shaders",
+  "homepage": "",
+  "license": "MIT",
+  "dependencies": [
+    "boost-stl-interfaces",
+    "frozen",
+    "simpleini",
+    "spdlog",
+    "xbyak"
+  ]
+}
