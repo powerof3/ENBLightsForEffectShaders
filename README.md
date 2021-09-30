@@ -1,6 +1,6 @@
-# Spell Perk Item Distributor
+# ENB Lights For Effect Shaders
 
-Distributes spells/perks/items/shouts/leveled-spells/packages/outfits/death-items to NPCs
+SKSE plugin that adds support for ENB Light for all effect shaders.
 
 ## Requirements
 * [CMake](https://cmake.org/)
@@ -13,6 +13,8 @@ Distributes spells/perks/items/shouts/leveled-spells/packages/outfits/death-item
 * [CommonLibSSE](https://github.com/powerof3/CommonLibSSE/tree/dev)
 	* You need to build from the powerof3/dev branch
 	* Add this as as an environment variable `CommonLibSSEPath`
+* [ColorSpace](https://github.com/berendeanicolae/ColorSpace)
+	* C++ library for converting between color spaces and comparing colors.
 
 ## Register Visual Studio as a Generator
 * Open `x64 Native Tools Command Prompt`
@@ -21,8 +23,8 @@ Distributes spells/perks/items/shouts/leveled-spells/packages/outfits/death-item
 
 ## Building
 ```
-git clone https://github.com/powerof3/Spell-Perk-Item-Distributor.git
-cd Spell-Perk-Item-Distributor
+git clone https://github.com/powerof3/ENBLightsForEffectShaders.git
+cd ENBLightsForEffectShaders
 cmake -B build -S .
 ```
 ## License
