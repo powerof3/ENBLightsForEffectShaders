@@ -230,7 +230,7 @@ public:
 	}
 
 	void LoadSettings();
-	const std::set<RE::TESEffectShader*>& LoadBlacklist();
+	const std::set<std::variant<RE::TESEffectShader*, const RE::TESFile*>>& LoadBlacklist();
 
 	VALID_ACTORS get_valid_actors()
 	{
@@ -264,5 +264,7 @@ private:
 	std::uint32_t numTimesApplied{ 1 };
 
 	std::set<FormIDPair> blacklistedFormIDs;
-	std::set<RE::TESEffectShader*> blacklistedShaders;
+	std::set<
+		std::variant<RE::TESEffectShader*, const RE::TESFile*>>
+		blacklistedShaders;
 };

@@ -52,7 +52,20 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 		auto& blacklistedShaders = Settings::GetSingleton()->LoadBlacklist();
 
 		const auto can_be_applied_to = [blacklistedShaders](RE::TESEffectShader* a_effectShader) {
-			return a_effectShader->data.flags.none(RE::EffectShaderData::Flags::kDisableParticleShader) && a_effectShader->data.particleShaderPersistantParticleCount > 0 && blacklistedShaders.find(a_effectShader) == blacklistedShaders.end();
+			return a_effectShader->data.flags.none(RE::EffectShaderData::Flags::kDisableParticleShader)
+
+			       && a_effectShader->data.particleShaderPersistantParticleCount > 0 &&
+
+			       std::find_if(blacklistedShaders.begin(), blacklistedShaders.end(), [&a_effectShader](const auto& formOrFile) {
+					   if (std::holds_alternative<RE::TESEffectShader*>(formOrFile)) {
+						   auto effectShader = std::get<RE::TESEffectShader*>(formOrFile);
+						   return effectShader == a_effectShader;
+					   } else if (std::holds_alternative<const RE::TESFile*>(formOrFile)) {
+						   auto file = std::get<const RE::TESFile*>(formOrFile);
+						   return file && file->IsFormInMod(a_effectShader->GetFormID());
+					   }
+					   return false;
+				   }) == blacklistedShaders.end();
 		};
 
 		auto lightManager = LightManager::GetSingleton();

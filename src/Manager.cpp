@@ -15,7 +15,7 @@ void Settings::LoadSettings()
 
 	numTimesApplied = string::lexical_cast<std::uint32_t>(ini.GetValue("Settings", "ENB Light Limit", "2"));
 	ini.SetValue("Settings", "ENB Light Limit", std::to_string(numTimesApplied).c_str(), ";Number of ENB light models to be spawned per effect shader.", true);
-	
+
 	if (auto values = ini.GetSection("Blacklist"); values) {
 		for (auto& [key, entry] : *values) {
 			blacklistedFormIDs.insert(detail::parse_ini(entry));
@@ -25,12 +25,16 @@ void Settings::LoadSettings()
 	ini.SaveFile(path);
 }
 
-const std::set<RE::TESEffectShader*>& Settings::LoadBlacklist()
+const std::set<std::variant<RE::TESEffectShader*, const RE::TESFile*>>& Settings::LoadBlacklist()
 {
 	const auto dataHandler = RE::TESDataHandler::GetSingleton();
 
 	for (auto& [formID, modName] : blacklistedFormIDs) {
-		if (formID) {
+		if (modName && !formID) {
+			if (const RE::TESFile* filterMod = dataHandler->LookupModByName(*modName); filterMod) {
+				blacklistedShaders.insert(filterMod);
+			}
+		} else if (formID) {
 			auto effectShader = modName ?
                                     dataHandler->LookupForm<RE::TESEffectShader>(*formID, *modName) :
                                     RE::TESForm::LookupByID<RE::TESEffectShader>(*formID);
