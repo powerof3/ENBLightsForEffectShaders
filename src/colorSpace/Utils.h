@@ -1,7 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#define M_PI 3.141592653589793238462643383279502884L
+#define M_PI 3.141592653589793238462643383279502884
 #define SQR(x) ((x)*(x))
 #define POW2(x) SQR(x)
 #define POW3(x) ((x)*(x)*(x))
