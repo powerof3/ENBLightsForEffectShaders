@@ -7,8 +7,8 @@
 #include "SKSE/SKSE.h"
 
 #include <compare>
+#include <ranges>
 #include <frozen/map.h>
-#include <frozen/set.h>
 #include <frozen/unordered_map.h>
 #include <SimpleIni.h>
 #include <spdlog/sinks/basic_file_sink.h>
@@ -23,21 +23,14 @@ using namespace std::literals;
 
 namespace stl
 {
-	using SKSE::stl::to_underlying;
 	using SKSE::stl::adjust_pointer;
+	using SKSE::stl::to_underlying;
 
 	template <class T>
 	void write_thunk_call(std::uintptr_t a_src)
 	{
 		auto& trampoline = SKSE::GetTrampoline();
 		T::func = trampoline.write_call<5>(a_src, T::thunk);
-	}
-
-	template <class F, class T>
-	void write_vfunc()
-	{
-		REL::Relocation<std::uintptr_t> vtbl{ F::VTABLE[0] };
-		T::func = vtbl.write_vfunc(T::size, T::thunk);
 	}
 }
 
