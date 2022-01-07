@@ -64,28 +64,6 @@ private:
 			return a_str;
 		}
 
-		static std::string compose_IDs(const stl::FormOrEditorID& a_formOrEditorID)
-		{
-			if (std::holds_alternative<stl::FormModPair>(a_formOrEditorID)) {
-				auto& [formID, mod] = std::get<stl::FormModPair>(a_formOrEditorID);
-				if (formID && mod) {
-					std::stringstream value;
-					value << "0x" << std::uppercase << std::hex << *formID;
-					return value.str().append("~").append(*mod);
-				}
-				if (formID) {
-					std::stringstream value;
-					value << "0x" << std::uppercase << std::hex << *formID;
-					return value.str();
-				}
-				if (mod) {
-					return *mod;
-				}
-				return {};
-			}
-			return std::get<std::string>(a_formOrEditorID);
-		}
-
 		static inline frozen::map<std::string_view, LIGHT, 18> enumMap{
 			{ "None"sv, LIGHT::kNone },
 			{ "Fire"sv, LIGHT::kFire },
@@ -140,7 +118,9 @@ private:
 		}
 	};
 
-	std::set<std::pair<stl::FormOrEditorID, std::string>> blacklistedIDs{};
+	std::multimap<CSimpleIniA::Entry, std::string, CSimpleIniA::Entry::LoadOrder> blacklistedIDs_OLD{};
+	std::set<stl::FormOrEditorID> blacklistedIDs{};
+
 	std::set<std::variant<RE::TESEffectShader*, const RE::TESFile*>> blacklistedShaders{};
 
 	std::map<stl::FormOrEditorID, LIGHT> overridenIDs{};
