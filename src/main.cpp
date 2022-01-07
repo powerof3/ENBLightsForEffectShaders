@@ -86,7 +86,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a
 	logger::info(FMT_STRING("{} v{}"), Version::PROJECT, Version::NAME);
 
 	a_info->infoVersion = SKSE::PluginInfo::kVersion;
-	a_info->name = "ENB Light For Effect Shaders";
+	a_info->name = "ENB Lights For Effect Shaders";
 	a_info->version = Version::MAJOR;
 
 	if (a_skse->IsEditor()) {
