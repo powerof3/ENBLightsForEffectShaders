@@ -25,6 +25,7 @@ namespace stl
 {
 	using SKSE::stl::adjust_pointer;
 	using SKSE::stl::to_underlying;
+	using SKSE::stl::report_and_fail;
 
 	template <class T>
 	void write_thunk_call(std::uintptr_t a_src)

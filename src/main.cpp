@@ -3,7 +3,7 @@
 
 namespace ShaderReferenceEffect
 {
-	struct AddAddonModel
+	struct StartAnimation
 	{
 		struct detail
 		{
@@ -20,26 +20,25 @@ namespace ShaderReferenceEffect
 			}
 		};
 
-			static void thunk(RE::NiAVObject* a_addon)
-			{
-				if (a_addon && a_addon->name == "po3_ENBLightGlow") {
-					const auto user = a_addon->GetUserData();
-					const auto actor = user ? user->As<RE::Actor>() : nullptr;
-					if (actor && !detail::is_valid(actor)) {
-						a_addon->SetAppCulled(true);
-					}
-				}
-
-				func(a_addon);
-			}
-			static inline REL::Relocation<decltype(&thunk)> func;
-		};
-
-		void Install()
+		static void thunk(RE::NiAVObject* a_addon)
 		{
-			REL::Relocation<std::uintptr_t> target{ REL::Offset(0x57D7B0) };
-			stl::write_thunk_call<StartAnimation>(target.address() + 0x9F9);
+			if (a_addon && a_addon->name == "po3_ENBLightGlow") {
+				const auto user = a_addon->GetUserData();
+				const auto actor = user ? user->As<RE::Actor>() : nullptr;
+				if (actor && !detail::is_valid(actor)) {
+					a_addon->SetAppCulled(true);
+				}
+			}
+
+			func(a_addon);
 		}
+		static inline REL::Relocation<decltype(&thunk)> func;
+	};
+
+	void Install()
+	{
+		REL::Relocation<std::uintptr_t> target{ REL::ID(34934) };
+		stl::write_thunk_call<StartAnimation>(target.address() + 0x9F9);
 	}
 }
 
@@ -66,12 +65,14 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 	}
 }
 
-extern "C" __declspec(dllexport) constexpr auto SKSEPlugin_Version = []() {
-	SKSE::PluginVersionData v{};
-	v.pluginVersion = Version::MAJOR;
-	v.PluginName("ENB Light For Effect Shaders"sv);
-	v.AuthorName("powerofthree"sv);
-	v.CompatibleVersions({ SKSE::RUNTIME_1_6_318 });
+extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
+	SKSE::PluginVersionData v;
+	v.PluginVersion(Version::MAJOR);
+	v.PluginName("ENB Lights For Effect Shaders"sv);
+	v.AuthorName("powerofthree");
+	v.UsesAddressLibrary(true);
+	v.CompatibleVersions({ SKSE::RUNTIME_LATEST });
+
 	return v;
 }();
 
@@ -79,7 +80,7 @@ bool InitLogger()
 {
 	auto path = logger::log_directory();
 	if (!path) {
-		return false;
+		stl::report_and_fail("Failed to find standard logging directory"sv);
 	}
 
 	*path /= fmt::format(FMT_STRING("{}.log"), Version::PROJECT);
