@@ -19,11 +19,12 @@ void Settings::LoadSettings()
 	ini.SetValue("Settings", "ENB Light Limit", std::to_string(numTimesApplied).c_str(), ";Number of ENB light models to be spawned per effect shader.", true);
 
 	//delete blacklist section and recreate in override_ENBL
-    if (auto values = ini.GetSection("Blacklist"); values) {
+	if (auto values = ini.GetSection("Blacklist"); values) {
 		for (auto& [key, entry] : *values) {
-			blacklistedIDs.emplace(detail::parse_IDs(entry), key.pComment);
+		    blacklistedIDs.emplace(detail::parse_IDs(entry));
+			blacklistedIDs_OLD.emplace(key, entry);
 		}
-		ini.Delete("Blacklist", nullptr);
+		ini.Delete("Blacklist", "EffectShader", true);
 	}
 
 	ini.SaveFile(path);
@@ -43,14 +44,14 @@ void Settings::LoadOverrideSettings()
 	}
 
 	if (configs.empty()) {
-		logger::warn("	No .ini files with _ENBL suffix were found within the Data folder. Whitelist will not be loaded");
+		logger::warn("No .ini files with _ENBL suffix were found within the Data folder. Overrides will not be loaded");
 		return;
 	}
 
-	logger::info("	{} matching inis found", configs.size());
+	logger::info("{} matching inis found", configs.size());
 
 	for (auto& path : configs) {
-		logger::info("		INI : {}", path);
+		logger::info("	INI : {}", path);
 
 		CSimpleIniA ini;
 		ini.SetUnicode();
@@ -66,15 +67,19 @@ void Settings::LoadOverrideSettings()
 				overridenIDs.emplace(detail::parse_override_IDs(entry));
 			}
 		}
-		if (auto values = ini.GetSection("Blacklist"); values) {
-			for (auto& [key, entry] : *values) {
-				blacklistedIDs.emplace(detail::parse_IDs(entry), key.pComment);
-			}
-		} else {
-			for (const auto& [ID, comment] : std::ranges::reverse_view(blacklistedIDs)) {
-				ini.SetValue("Blacklist", "EffectShader", detail::compose_IDs(ID).c_str(), comment.c_str());
+
+		if (path.find("Overrides_ENBL") != std::string::npos && !blacklistedIDs_OLD.empty()) {
+			for (auto& [key, entry] : blacklistedIDs_OLD) {
+				ini.DeleteValue("Blacklist", key.pItem, entry.c_str());
+				ini.SetValue("Blacklist", key.pItem, entry.c_str(), key.pComment, false);
 			}
 			ini.SaveFile(path.c_str());
+		}
+
+		if (auto values = ini.GetSection("Blacklist"); values) {
+			for (const auto& entry : *values | std::views::values) {
+				blacklistedIDs.emplace(detail::parse_IDs(entry));
+			}
 		}
 	}
 }
@@ -83,12 +88,16 @@ void Settings::LoadBlacklist()
 {
 	const auto dataHandler = RE::TESDataHandler::GetSingleton();
 
-	for (const auto& ID : blacklistedIDs | std::views::keys) {
+	logger::info("loading blacklist");
+
+	for (const auto& ID : blacklistedIDs) {
 		if (std::holds_alternative<stl::FormModPair>(ID)) {
 			auto& [formID, modName] = std::get<stl::FormModPair>(ID);
 			if (modName && !formID) {
 				if (const RE::TESFile* filterMod = dataHandler->LookupModByName(*modName); filterMod) {
 					blacklistedShaders.insert(filterMod);
+				} else {
+					logger::warn("	mod ({}) not found", *modName);
 				}
 			} else if (formID) {
 				auto effectShader = modName ?
@@ -96,21 +105,30 @@ void Settings::LoadBlacklist()
                                         RE::TESForm::LookupByID<RE::TESEffectShader>(*formID);
 				if (effectShader) {
 					blacklistedShaders.insert(effectShader);
+				} else {
+					logger::warn("	effect shader (0x{:X}~{}) not found", *formID, *modName);
 				}
 			}
-		} else if (auto effectShader = RE::TESForm::LookupByEditorID<RE::TESEffectShader>(std::get<std::string>(ID)); effectShader) {
-			blacklistedShaders.insert(effectShader);
+		} else {
+			const auto editorID = std::get<std::string>(ID);
+			if (auto effectShader = RE::TESForm::LookupByEditorID<RE::TESEffectShader>(editorID); effectShader) {
+				blacklistedShaders.insert(effectShader);
+			} else {
+				logger::warn("	effect shader ({}) not found", editorID);
+			}
 		}
 	}
 
-	logger::info("blacklist count : {}", blacklistedShaders.size());
+	logger::info("blacklist count : {}/{}", blacklistedShaders.size(), blacklistedIDs.size());
 }
 
 void Settings::LoadOverrideShaders()
 {
 	const auto dataHandler = RE::TESDataHandler::GetSingleton();
 
-	for (auto& [ID, light] : overridenIDs) {
+	logger::info("loading override list");
+
+    for (auto& [ID, light] : overridenIDs) {
 		if (std::holds_alternative<stl::FormModPair>(ID)) {
 			if (auto& [formID, modName] = std::get<stl::FormModPair>(ID); formID) {
 				auto effectShader = modName ?
@@ -118,14 +136,21 @@ void Settings::LoadOverrideShaders()
                                         RE::TESForm::LookupByID<RE::TESEffectShader>(*formID);
 				if (effectShader) {
 					overridenShaders.emplace(effectShader, light);
+				} else {
+					logger::warn("	effect shader (0x{:X}~{}) not found", *formID, *modName);
 				}
 			}
-		} else if (auto effectShader = RE::TESForm::LookupByEditorID<RE::TESEffectShader>(std::get<std::string>(ID)); effectShader) {
-			overridenShaders.emplace(effectShader, light);
+		} else {
+			const auto editorID = std::get<std::string>(ID);
+			if (auto effectShader = RE::TESForm::LookupByEditorID<RE::TESEffectShader>(editorID); effectShader) {
+				overridenShaders.emplace(effectShader, light);
+			} else {
+				logger::warn("	effect shader ({}) not found", editorID);
+			}
 		}
 	}
 
-	logger::info("override shader count : {}", overridenShaders.size());
+	logger::info("override shader count : {}/{}", overridenShaders.size(), overridenIDs.size());
 }
 
 bool Settings::IsInBlacklist(RE::TESEffectShader* a_effectShader)
