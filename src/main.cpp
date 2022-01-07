@@ -1,28 +1,24 @@
 #include "Manager.h"
+#include "Settings.h"
 
 namespace ShaderReferenceEffect
 {
-	namespace Add
+	struct AddAddonModel
 	{
-		//AddAddonModel was inlined away
-		struct StartAnimation
+		struct detail
 		{
-			struct detail
+			static bool is_valid(const RE::Actor* a_user)
 			{
-				static bool is_valid(RE::Actor* a_user)
-				{
-					static auto validActors = Settings::GetSingleton()->get_valid_actors();
-
-					switch (validActors) {
-					case Settings::kPlayer:
-						return a_user->IsPlayerRef();
-					case Settings::kTeammates:
-						return a_user->IsPlayerRef() || a_user->IsPlayerTeammate();
-					default:
-						return true;
-					}
-				};
-			};
+				switch (Settings::GetSingleton()->validActors) {
+				case Settings::kPlayer:
+					return a_user->IsPlayerRef();
+				case Settings::kTeammates:
+					return a_user->IsPlayerRef() || a_user->IsPlayerTeammate();
+				default:
+					return true;
+				}
+			}
+		};
 
 			static void thunk(RE::NiAVObject* a_addon)
 			{
@@ -50,27 +46,19 @@ namespace ShaderReferenceEffect
 void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 {
 	if (a_message->type == SKSE::MessagingInterface::kDataLoaded) {
-		auto& blacklistedShaders = Settings::GetSingleton()->LoadBlacklist();
+		Settings::GetSingleton()->LoadBlacklist();
+		Settings::GetSingleton()->LoadOverrideShaders();
 
-		const auto can_be_applied_to = [blacklistedShaders](RE::TESEffectShader* a_effectShader) {
+		constexpr auto can_be_applied_to = [](RE::TESEffectShader* a_effectShader) {
 			return a_effectShader->data.flags.none(RE::EffectShaderData::Flags::kDisableParticleShader)
 
 			       && a_effectShader->data.particleShaderPersistantParticleCount > 0 &&
 
-			       std::find_if(blacklistedShaders.begin(), blacklistedShaders.end(), [&a_effectShader](const auto& formOrFile) {
-					   if (std::holds_alternative<RE::TESEffectShader*>(formOrFile)) {
-						   auto effectShader = std::get<RE::TESEffectShader*>(formOrFile);
-						   return effectShader == a_effectShader;
-					   } else if (std::holds_alternative<const RE::TESFile*>(formOrFile)) {
-						   auto file = std::get<const RE::TESFile*>(formOrFile);
-						   return file && file->IsFormInMod(a_effectShader->GetFormID());
-					   }
-					   return false;
-				   }) == blacklistedShaders.end();
+			       !Settings::GetSingleton()->IsInBlacklist(a_effectShader);
 		};
 
-		auto lightManager = LightManager::GetSingleton();
-		for (auto& effectShader : RE::TESDataHandler::GetSingleton()->GetFormArray<RE::TESEffectShader>()) {
+		const auto lightManager = LightManager::GetSingleton();
+		for (const auto& effectShader : RE::TESDataHandler::GetSingleton()->GetFormArray<RE::TESEffectShader>()) {
 			if (effectShader && can_be_applied_to(effectShader)) {
 				lightManager->ApplyLight(effectShader);
 			}
@@ -120,10 +108,12 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 	SKSE::Init(a_skse);
 
-	Settings::GetSingleton()->LoadSettings();
+	const auto settings = Settings::GetSingleton();
+	settings->LoadSettings();
+	settings->LoadOverrideSettings();
 
 	SKSE::AllocTrampoline(14);
-	ShaderReferenceEffect::Add::Install();
+	ShaderReferenceEffect::Install();
 
 	auto messaging = SKSE::GetMessagingInterface();
 	messaging->RegisterListener(MessageHandler);

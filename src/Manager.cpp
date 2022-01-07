@@ -1,55 +1,7 @@
 #include "Manager.h"
+#include "Settings.h"
 
-void Settings::LoadSettings()
-{
-	constexpr auto path = L"Data/SKSE/Plugins/po3_ENBLightsForEffectShaders.ini";
-
-	CSimpleIniA ini;
-	ini.SetUnicode();
-	ini.SetMultiKey();
-
-	ini.LoadFile(path);
-
-	validActors = string::lexical_cast<VALID_ACTORS>(ini.GetValue("Settings", "Valid Actors", "0"));
-	ini.SetValue("Settings", "Valid Actors", std::to_string(validActors).c_str(), ";Display enb lights on effect shaders on these characters.\n;0 - Player Only, 1 - Player And Followers, 2 - Everyone", true);
-
-	numTimesApplied = string::lexical_cast<std::uint32_t>(ini.GetValue("Settings", "ENB Light Limit", "2"));
-	ini.SetValue("Settings", "ENB Light Limit", std::to_string(numTimesApplied).c_str(), ";Number of ENB light models to be spawned per effect shader.", true);
-
-	if (auto values = ini.GetSection("Blacklist"); values) {
-		for (auto& [key, entry] : *values) {
-			blacklistedFormIDs.insert(detail::parse_ini(entry));
-		}
-	}
-
-	ini.SaveFile(path);
-}
-
-const std::set<std::variant<RE::TESEffectShader*, const RE::TESFile*>>& Settings::LoadBlacklist()
-{
-	const auto dataHandler = RE::TESDataHandler::GetSingleton();
-
-	for (auto& [formID, modName] : blacklistedFormIDs) {
-		if (modName && !formID) {
-			if (const RE::TESFile* filterMod = dataHandler->LookupModByName(*modName); filterMod) {
-				blacklistedShaders.insert(filterMod);
-			}
-		} else if (formID) {
-			auto effectShader = modName ?
-                                    dataHandler->LookupForm<RE::TESEffectShader>(*formID, *modName) :
-                                    RE::TESForm::LookupByID<RE::TESEffectShader>(*formID);
-			if (effectShader) {
-				blacklistedShaders.insert(effectShader);
-			}
-		}
-	}
-
-	logger::info("blacklist count : {}", blacklistedShaders.size());
-
-	return blacklistedShaders;
-}
-
-LightManager::LIGHT LightManager::GetLight(RE::TESEffectShader* a_effectShader)
+LightManager::LIGHT LightManager::GetLight(const RE::TESEffectShader* a_effectShader)
 {
 	using Flags = RE::EffectShaderData::Flags;
 
@@ -96,7 +48,7 @@ LightManager::LIGHT LightManager::GetLight(RE::TESEffectShader* a_effectShader)
 		for (auto& [light, textures] : texture::membraneShaderMap) {
 			for (auto& texture : textures) {
 				if (has_membrane_shader(texture)) {
-					auto edgeColor = a_effectShader->data.edgeColor;
+					const auto& edgeColor = a_effectShader->data.edgeColor;
 					if (!color::is_invalid_color(edgeColor)) {
 						return color::get_light_by_color(edgeColor).first;
 					}
@@ -110,7 +62,7 @@ LightManager::LIGHT LightManager::GetLight(RE::TESEffectShader* a_effectShader)
 		for (auto& [light, textures] : texture::paletteMap) {
 			for (auto& texture : textures) {
 				if (has_membrane_palette(texture)) {
-					auto edgeColor = a_effectShader->data.edgeColor;
+					const auto& edgeColor = a_effectShader->data.edgeColor;
 					if (!color::is_invalid_color(edgeColor)) {
 						return color::get_light_by_color(edgeColor).first;
 					}
@@ -120,7 +72,7 @@ LightManager::LIGHT LightManager::GetLight(RE::TESEffectShader* a_effectShader)
 		}
 	}
 
-	std::array<RE::Color, 3> vec{
+	const std::array vec{
 		a_effectShader->data.colorKey1,
 		a_effectShader->data.colorKey2,
 		a_effectShader->data.colorKey3
@@ -135,27 +87,25 @@ LightManager::LIGHT LightManager::GetLight(RE::TESEffectShader* a_effectShader)
 					return a.second < b.second;
 				});
 			return it != lights.end() ? it->first : kNone;
-		} else {
-			//by frequency
-			std::unordered_map<LIGHT, std::int32_t> hash;
-			for (size_t i = 0; i < lights.size(); i++) {
-				hash[lights[i].first]++;
-			}
-
-			std::int32_t max_count = -1;
-			LIGHT light = kNone;
-			for (auto i : hash) {
-				if (max_count < i.second) {
-					light = i.first;
-					max_count = i.second;
-				}
-			}
-
-			return light;
 		}
+		//by frequency
+		std::unordered_map<LIGHT, std::int32_t> hash;
+		for (auto& light : lights | std::views::keys) {
+			hash[light]++;
+		}
+
+		std::int32_t max_count = -1;
+		LIGHT finalLight = kNone;
+		for (const auto& [light, count] : hash) {
+			if (max_count < count) {
+				finalLight = light;
+				max_count = count;
+			}
+		}
+		return finalLight;
 	}
 
-	auto edgeColor = a_effectShader->data.edgeColor;
+	const auto& edgeColor = a_effectShader->data.edgeColor;
 	if (!color::is_invalid_color(edgeColor)) {
 		return color::get_light_by_color(edgeColor).first;
 	}
@@ -184,15 +134,20 @@ bool LightManager::ApplyLight(RE::TESEffectShader* a_effectShader)
 		init = true;
 	}
 
-	if (auto light = GetLight(a_effectShader); light != kNone) {
-		if (auto& addonModel = a_effectShader->data.addonModels; !addonModel) {
+	auto light = Settings::GetSingleton()->GetOverrideLight(a_effectShader);
+	if (light == kNone) {
+		light = GetLight(a_effectShader);
+	}
+
+	if (light != kNone) {
+		if (const auto& addonModel = a_effectShader->data.addonModels; !addonModel) {
 			a_effectShader->data.addonModels = debrisMap[light];
 		} else {
-			auto debris = addonModel->data.front();
+			const auto debris = addonModel->data.front();
 			if (debris && string::icontains(debris->fileName, "enb\\")) {
 				return false;
 			}
-			static auto limit = Settings::GetSingleton()->get_light_limit();
+			static auto limit = Settings::GetSingleton()->numTimesApplied;
 			for (std::uint32_t i = 0; i < limit; i++) {
 				addonModel->data.emplace_front(debrisDataMap[light]);
 			}

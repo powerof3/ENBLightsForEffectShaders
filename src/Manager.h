@@ -33,7 +33,7 @@ public:
 		return std::addressof(singleton);
 	}
 
-	static LIGHT GetLight(RE::TESEffectShader* a_effectShader);
+	static LIGHT GetLight(const RE::TESEffectShader* a_effectShader);
 	bool ApplyLight(RE::TESEffectShader* a_effectShader);
 
 private:
@@ -85,7 +85,7 @@ private:
 				return ColorSpace::Cie2000Comparison::Compare(&a, &b);
 			};
 
-			for (auto& [type, color] : color::map) {
+			for (auto& [type, color] : map) {
 				auto distance = static_cast<float>(get_color_distance(a_color, color));
 				distMap.emplace(type, distance);
 
@@ -100,7 +100,7 @@ private:
 			if (it != distMap.end()) {
 				return *it;
 			}
-			return { LIGHT::kNone, 0.0f };
+			return { kNone, 0.0f };
 		}
 
 		static std::array<std::pair<LIGHT, float>, 3> get_light_by_color(const std::array<RE::Color, 3>& a_colors)
@@ -207,64 +207,4 @@ private:
 
 	std::map<LIGHT, RE::BGSDebrisData*> debrisDataMap;
 	std::map<LIGHT, RE::BGSDebris*> debrisMap;
-};
-
-class Settings
-{
-public:
-	using FormIDPair = std::pair<
-		std::optional<RE::FormID>,
-		std::optional<std::string>>;
-
-	enum VALID_ACTORS : std::uint32_t
-	{
-		kPlayer = 0,
-		kTeammates = 1,
-		kEveryone = 2
-	};
-
-	static Settings* GetSingleton()
-	{
-		static Settings singleton;
-		return std::addressof(singleton);
-	}
-
-	void LoadSettings();
-	const std::set<std::variant<RE::TESEffectShader*, const RE::TESFile*>>& LoadBlacklist();
-
-	VALID_ACTORS get_valid_actors()
-	{
-		return validActors;
-	}
-	std::uint32_t get_light_limit() { return numTimesApplied; };
-
-private:
-	struct detail
-	{
-		static FormIDPair parse_ini(const std::string& a_str)
-		{
-			if (a_str.find("~"sv) != std::string::npos) {
-				auto splitID = string::split(a_str, "~");
-				return std::make_pair(
-					string::lexical_cast<RE::FormID>(splitID.at(0), true),
-					splitID.at(1));
-			} else if (string::icontains(a_str, ".esp") || string::icontains(a_str, ".esl") || string::icontains(a_str, ".esm")) {
-				return std::make_pair(
-					std::nullopt,
-					a_str);
-			} else {
-				return std::make_pair(
-					string::lexical_cast<RE::FormID>(a_str, true),
-					std::nullopt);
-			}
-		}
-	};
-
-	VALID_ACTORS validActors{ 0 };
-	std::uint32_t numTimesApplied{ 1 };
-
-	std::set<FormIDPair> blacklistedFormIDs;
-	std::set<
-		std::variant<RE::TESEffectShader*, const RE::TESFile*>>
-		blacklistedShaders;
 };
