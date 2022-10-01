@@ -203,7 +203,7 @@ private:
 		};
 	};
 
-	bool init{ false };
+	std::atomic_bool init{ false };
 
 	std::map<LIGHT, RE::BGSDebrisData*> debrisDataMap;
 	std::map<LIGHT, RE::BGSDebris*> debrisMap;

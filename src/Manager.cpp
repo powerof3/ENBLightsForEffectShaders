@@ -116,7 +116,8 @@ LightManager::LIGHT LightManager::GetLight(const RE::TESEffectShader* a_effectSh
 bool LightManager::ApplyLight(RE::TESEffectShader* a_effectShader)
 {
 	if (!init) {
-		for (auto& [type, path] : nif::map) {
+		init = true;
+	    for (auto& [type, path] : nif::map) {
 			const auto debrisData = new RE::BGSDebrisData(path.data());
 			if (!debrisData) {
 				continue;
@@ -131,7 +132,6 @@ bool LightManager::ApplyLight(RE::TESEffectShader* a_effectShader)
 			debrisMap[type] = debris;
 			debrisDataMap[type] = debrisData;
 		}
-		init = true;
 	}
 
 	auto light = Settings::GetSingleton()->GetOverrideLight(a_effectShader);
@@ -143,13 +143,17 @@ bool LightManager::ApplyLight(RE::TESEffectShader* a_effectShader)
 		if (const auto& addonModel = a_effectShader->data.addonModels; !addonModel) {
 			a_effectShader->data.addonModels = debrisMap[light];
 		} else {
-			const auto debris = addonModel->data.front();
-			if (debris && string::icontains(debris->fileName, "enb\\")) {
-				return false;
-			}
 			static auto limit = Settings::GetSingleton()->numTimesApplied;
-			for (std::uint32_t i = 0; i < limit; i++) {
-				addonModel->data.emplace_front(debrisDataMap[light]);
+			auto& newDebrisData = debrisDataMap[light];
+
+			const auto it = std::ranges::find_if(addonModel->data, [&](const auto& debrisData) {
+				return string::icontains(debrisData->fileName, "enb\\") || debrisData == newDebrisData;
+			});
+
+		    if (it == addonModel->data.end()) {
+				for (std::uint32_t i = 0; i < limit; i++) {
+					addonModel->data.emplace_front(newDebrisData);
+				}
 			}
 		}
 		return true;

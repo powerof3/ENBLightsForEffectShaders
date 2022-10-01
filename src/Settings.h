@@ -15,7 +15,7 @@ class Settings
 public:
 	using LIGHT = LightManager::LIGHT;
 
-    enum VALID_ACTORS : std::uint32_t
+	enum VALID_ACTORS : std::uint32_t
 	{
 		kPlayer = 0,
 		kTeammates = 1,
@@ -95,7 +95,7 @@ private:
 				auto& IDStr = splitStr[0];
 				auto& lightStr = splitStr[1];
 
-			    if (const auto pos = IDStr.find("~"sv); pos != std::string::npos || string::is_only_hex(IDStr)) {
+				if (const auto pos = IDStr.find("~"sv); pos != std::string::npos || string::is_only_hex(IDStr)) {
 					if (pos != std::string::npos) {
 						auto splitID = string::split(IDStr, "~");
 						ID = std::make_pair(
@@ -115,6 +115,16 @@ private:
 			}
 
 			return { ID, light };
+		}
+	};
+
+	struct INI
+	{
+		template <class T>
+		static void get_value(CSimpleIniA& a_ini, T& a_value, const char* a_section, const char* a_key, const char* a_comment)
+		{
+			a_value = string::lexical_cast<T>(a_ini.GetValue(a_section, a_key, std::to_string(a_value).c_str()));
+			a_ini.SetValue(a_section, a_key, std::to_string(a_value).c_str(), a_comment);
 		}
 	};
 
