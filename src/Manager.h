@@ -79,9 +79,9 @@ private:
 
 			auto shortestDistance = std::numeric_limits<float>::max();
 
-			constexpr auto get_color_distance = [](const RE::Color& a_color, const RGB& a_palette) {
-				ColorSpace::Rgb a(a_color.red, a_color.green, a_color.blue);
-				ColorSpace::Rgb b(a_palette[0], a_palette[1], a_palette[2]);
+			constexpr auto get_color_distance = [](const RE::Color& color, const RGB& palette) {
+				ColorSpace::Rgb a(color.red, color.green, color.blue);
+				ColorSpace::Rgb b(palette[0], palette[1], palette[2]);
 				return ColorSpace::Cie2000Comparison::Compare(&a, &b);
 			};
 
