@@ -14,7 +14,7 @@ jobs:
     uses: adya/pack-skse-mod/.github/workflows/pack.yml@main
     with:
       FOMOD_INCLUDE_PDB: true
-      FOMOD_MOD_NAME: "ENB Light For Effect Shaders"
+      FOMOD_MOD_NAME: "ENB Lights For Effect Shaders"
       FOMOD_MOD_AUTHOR: "powerofthree"
       FOMOD_MOD_NEXUS_ID: "56362"
       FOMOD_SE_MIN_GAME_VERSION: '1.5'
