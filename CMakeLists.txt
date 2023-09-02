@@ -125,6 +125,7 @@ endif()
 
 find_package(frozen CONFIG REQUIRED)
 find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
+find_path(CLIB_UTIL_INCLUDE_DIRS "ClibUtil/utils.hpp")
 
 # ---- Add source files ----
 
@@ -174,9 +175,10 @@ target_compile_definitions(
 target_include_directories(
 	${PROJECT_NAME}
 	PRIVATE
-		${CMAKE_CURRENT_BINARY_DIR}/include
-		${CMAKE_CURRENT_SOURCE_DIR}/src
-		${SIMPLEINI_INCLUDE_DIRS}
+	${CMAKE_CURRENT_BINARY_DIR}/include
+	${CMAKE_CURRENT_SOURCE_DIR}/src
+	${SIMPLEINI_INCLUDE_DIRS}
+	${CLIB_UTIL_INCLUDE_DIRS}
 )
 
 target_link_libraries(

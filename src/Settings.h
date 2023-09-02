@@ -49,7 +49,7 @@ private:
 				if (pos != std::string::npos) {
 					auto splitID = string::split(a_str, "~");
 					return std::make_pair(
-						string::lexical_cast<RE::FormID>(splitID.at(0), true),
+						string::to_num<RE::FormID>(splitID.at(0), true),
 						splitID.at(1));
 				}
 				if (string::icontains(a_str, ".es")) {
@@ -58,7 +58,7 @@ private:
 						a_str);
 				}
 				return std::make_pair(
-					string::lexical_cast<RE::FormID>(a_str, true),
+					string::to_num<RE::FormID>(a_str, true),
 					std::nullopt);
 			}
 			return a_str;
@@ -99,11 +99,11 @@ private:
 					if (pos != std::string::npos) {
 						auto splitID = string::split(IDStr, "~");
 						ID = std::make_pair(
-							string::lexical_cast<RE::FormID>(splitID.at(0), true),
+							string::to_num<RE::FormID>(splitID.at(0), true),
 							splitID.at(1));
 					} else {
 						ID = std::make_pair(
-							string::lexical_cast<RE::FormID>(IDStr, true),
+							string::to_num<RE::FormID>(IDStr, true),
 							std::nullopt);
 					}
 				} else {
@@ -123,7 +123,7 @@ private:
 		template <class T>
 		static void get_value(CSimpleIniA& a_ini, T& a_value, const char* a_section, const char* a_key, const char* a_comment)
 		{
-			a_value = string::lexical_cast<T>(a_ini.GetValue(a_section, a_key, std::to_string(a_value).c_str()));
+			a_value = string::to_num<T>(a_ini.GetValue(a_section, a_key, std::to_string(a_value).c_str()));
 			a_ini.SetValue(a_section, a_key, std::to_string(a_value).c_str(), a_comment);
 		}
 	};

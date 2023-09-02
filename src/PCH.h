@@ -6,20 +6,25 @@
 #include "RE/Skyrim.h"
 #include "SKSE/SKSE.h"
 
+#include <SimpleIni.h>
 #include <compare>
-#include <ranges>
 #include <frozen/map.h>
 #include <frozen/unordered_map.h>
-#include <SimpleIni.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <xbyak/xbyak.h>
+
+#include <ClibUtil/numeric.hpp>
+#include <ClibUtil/string.hpp>
 
 #define DLLEXPORT __declspec(dllexport)
 
 namespace logger = SKSE::log;
-namespace string = SKSE::stl::string;
-namespace numeric = SKSE::stl::numeric;
+namespace numeric = clib_util::numeric;
+namespace string = clib_util::string;
+namespace WinAPI = SKSE::WinAPI;
+
 using namespace std::literals;
+using namespace string::literals;
 
 namespace stl
 {
@@ -36,8 +41,13 @@ namespace stl
 
 #ifdef SKYRIM_AE
 #	define OFFSET(se, ae) ae
+#	define OFFSET_3(se, ae, vr) ae
+#elif SKYRIMVR
+#	define OFFSET(se, ae) se
+#	define OFFSET_3(se, ae, vr) vr
 #else
 #	define OFFSET(se, ae) se
+#	define OFFSET_3(se, ae, vr) se
 #endif
 
 #include "Version.h"

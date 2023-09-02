@@ -102,7 +102,7 @@ void Settings::LoadBlacklist()
 				if (effectShader) {
 					blacklistedShaders.insert(effectShader);
 				} else {
-					logger::warn("	effect shader (0x{:X}~{}) not found", *formID, *modName);
+					logger::warn("	effect shader (0x{:X}~{}) not found", *formID, modName ? *modName : "");
 				}
 			}
 		} else {
@@ -133,7 +133,7 @@ void Settings::LoadOverrideShaders()
 				if (effectShader) {
 					overridenShaders.emplace(effectShader, light);
 				} else {
-					logger::warn("	effect shader (0x{:X}~{}) not found", *formID, *modName);
+					logger::warn("	effect shader (0x{:X}~{}) not found", *formID, modName ? *modName : "");
 				}
 			}
 		} else {
