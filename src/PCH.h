@@ -6,6 +6,7 @@
 #include "RE/Skyrim.h"
 #include "SKSE/SKSE.h"
 
+#include <MergeMapperPluginAPI.h>
 #include <SimpleIni.h>
 #include <compare>
 #include <frozen/map.h>

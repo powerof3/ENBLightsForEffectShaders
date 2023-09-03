@@ -88,8 +88,15 @@ void Settings::LoadBlacklist()
 
 	for (const auto& ID : blacklistedIDs) {
 		if (std::holds_alternative<stl::FormModPair>(ID)) {
-			auto& [formID, modName] = std::get<stl::FormModPair>(ID);
-			if (modName && !formID) {
+			auto& [oformID, omodName] = std::get<stl::FormModPair>(ID);
+			auto modName = omodName;
+			auto formID = oformID;
+			if (g_mergeMapperInterface && omodName) {
+				auto [mergedModName, mergedFormID] = g_mergeMapperInterface->GetNewFormID((*modName).c_str(), formID.value_or(0));
+				modName = std::string(mergedModName);
+				formID = mergedFormID;
+			}
+			if (modName && (!formID || *formID == 0)) {
 				if (const RE::TESFile* filterMod = dataHandler->LookupModByName(*modName); filterMod) {
 					blacklistedShaders.insert(filterMod);
 				} else {
@@ -126,7 +133,14 @@ void Settings::LoadOverrideShaders()
 
 	for (auto& [ID, light] : overridenIDs) {
 		if (std::holds_alternative<stl::FormModPair>(ID)) {
-			if (auto& [formID, modName] = std::get<stl::FormModPair>(ID); formID) {
+			if (auto& [oformID, omodName] = std::get<stl::FormModPair>(ID); oformID) {
+				auto modName = omodName;
+				auto formID = oformID;
+				if (g_mergeMapperInterface && omodName) {
+					auto [mergedModName, mergedFormID] = g_mergeMapperInterface->GetNewFormID((*modName).c_str(), formID.value_or(0));
+					modName = std::string(mergedModName);
+					formID = mergedFormID;
+				}
 				auto effectShader = modName ?
 				                        dataHandler->LookupForm<RE::TESEffectShader>(*formID, *modName) :
 				                        RE::TESForm::LookupByID<RE::TESEffectShader>(*formID);
