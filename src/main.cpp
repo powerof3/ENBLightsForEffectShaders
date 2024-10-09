@@ -53,9 +53,9 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a
 	const auto ver = a_skse->RuntimeVersion();
 	if (ver
 #	ifndef SKYRIMVR
-		< SKSE::RUNTIME_SSE_1_5_97
+		< SKSE::RUNTIME_1_5_39
 #	else
-		< SKSE::RUNTIME_VR_1_4_15
+		> SKSE::RUNTIME_VR_1_4_15_1
 #	endif
 	) {
 		logger::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
