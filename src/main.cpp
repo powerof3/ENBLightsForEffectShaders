@@ -9,8 +9,8 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 	case SKSE::MessagingInterface::kPostPostLoad:
 		{
 			logger::info("{:*^30}", "MERGES");
-			MergeMapperPluginAPI::GetMergeMapperInterface001();
-			if (g_mergeMapperInterface) {
+			MergeMapperPluginAPI::GetMergeMapperInterface001();  // Request interface
+			if (g_mergeMapperInterface) {                        // Use Interface
 				const auto version = g_mergeMapperInterface->GetBuildNumber();
 				logger::info("Got MergeMapper interface buildnumber {}", version);
 			} else {
@@ -82,7 +82,7 @@ void InitializeLog()
 	log->flush_on(spdlog::level::info);
 
 	spdlog::set_default_logger(std::move(log));
-	spdlog::set_pattern("[%l] %v"s);
+	spdlog::set_pattern("%v"s);
 
 	logger::info(FMT_STRING("{} v{}"), Version::PROJECT, Version::NAME);
 }
@@ -91,9 +91,9 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 {
 	InitializeLog();
 
-	logger::info("Game version : {}", a_skse->RuntimeVersion().string());
+	logger::info("Game version : {}", a_skse->RuntimeVersion());
 
-	SKSE::Init(a_skse);
+	SKSE::Init(a_skse, false);
 
 	const auto messaging = SKSE::GetMessagingInterface();
 	messaging->RegisterListener(MessageHandler);

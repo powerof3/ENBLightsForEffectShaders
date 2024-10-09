@@ -2,37 +2,31 @@
 
 #include "colorspace/Comparison.h"
 
-class LightManager
+enum LIGHT : std::uint32_t
+{
+	kNone,
+	kFire,
+	kFrost,
+	kShock,
+	kHeal,
+	kDrain,
+	kFrenzy,
+	kPoison,
+	kParalyze,
+	kReanimate,
+	kShield,
+	kSoulTrap,
+	kSun,
+	kLight,
+	kTelekinesis,
+	kWard,
+	kDetectLife,
+	kTurnUndead
+};
+
+class LightManager : public ISingleton<LightManager>
 {
 public:
-	enum LIGHT : std::uint32_t
-	{
-		kNone,
-		kFire,
-		kFrost,
-		kShock,
-		kHeal,
-		kDrain,
-		kFrenzy,
-		kPoison,
-		kParalyze,
-		kReanimate,
-		kShield,
-		kSoulTrap,
-		kSun,
-		kLight,
-		kTelekinesis,
-		kWard,
-		kDetectLife,
-		kTurnUndead
-	};
-
-	static LightManager* GetSingleton()
-	{
-		static LightManager singleton;
-		return std::addressof(singleton);
-	}
-
 	static LIGHT GetLight(const RE::TESEffectShader* a_effectShader);
 	bool ApplyLight(RE::TESEffectShader* a_effectShader);
 
@@ -183,28 +177,26 @@ private:
 	struct nif
 	{
 		static constexpr frozen::map<LIGHT, std::string_view, 17> map{
-			{ kFire, "effects/enblightforeffectshaders/fire.nif"sv },
-			{ kFrost, "effects/enblightforeffectshaders/frost.nif"sv },
-			{ kShock, "effects/enblightforeffectshaders/shock.nif"sv },
-			{ kHeal, "effects/enblightforeffectshaders/heal.nif"sv },
-			{ kDrain, "effects/enblightforeffectshaders/drain.nif"sv },
-			{ kFrenzy, "effects/enblightforeffectshaders/frenzy.nif"sv },
-			{ kPoison, "effects/enblightforeffectshaders/poison.nif"sv },
-			{ kParalyze, "effects/enblightforeffectshaders/paralyze.nif"sv },
-			{ kReanimate, "effects/enblightforeffectshaders/reanimate.nif"sv },
-			{ kShield, "effects/enblightforeffectshaders/shield.nif"sv },
-			{ kSoulTrap, "effects/enblightforeffectshaders/soultrap.nif"sv },
-			{ kSun, "effects/enblightforeffectshaders/sun.nif"sv },
-			{ kLight, "effects/enblightforeffectshaders/light.nif"sv },
-			{ kTelekinesis, "effects/enblightforeffectshaders/telekinesis.nif"sv },
-			{ kWard, "effects/enblightforeffectshaders/ward.nif"sv },
-			{ kDetectLife, "effects/enblightforeffectshaders/detectlife.nif"sv },
-			{ kTurnUndead, "effects/enblightforeffectshaders/turnundead.nif"sv }
+			{ kFire, "effects\\enblightforeffectshaders\\fire.nif"sv },
+			{ kFrost, "effects\\enblightforeffectshaders\\frost.nif"sv },
+			{ kShock, "effects\\enblightforeffectshaders\\shock.nif"sv },
+			{ kHeal, "effects\\enblightforeffectshaders\\heal.nif"sv },
+			{ kDrain, "effects\\enblightforeffectshaders\\drain.nif"sv },
+			{ kFrenzy, "effects\\enblightforeffectshaders\\frenzy.nif"sv },
+			{ kPoison, "effects\\enblightforeffectshaders\\poison.nif"sv },
+			{ kParalyze, "effects\\enblightforeffectshaders\\paralyze.nif"sv },
+			{ kReanimate, "effects\\enblightforeffectshaders\\reanimate.nif"sv },
+			{ kShield, "effects\\enblightforeffectshaders\\shield.nif"sv },
+			{ kSoulTrap, "effects\\enblightforeffectshaders\\soultrap.nif"sv },
+			{ kSun, "effects\\enblightforeffectshaders\\sun.nif"sv },
+			{ kLight, "effects\\enblightforeffectshaders\\light.nif"sv },
+			{ kTelekinesis, "effects\\enblightforeffectshaders\\telekinesis.nif"sv },
+			{ kWard, "effects\\enblightforeffectshaders\\ward.nif"sv },
+			{ kDetectLife, "effects\\enblightforeffectshaders\\detectlife.nif"sv },
+			{ kTurnUndead, "effects\\enblightforeffectshaders\\turnundead.nif"sv }
 		};
 	};
 
-	std::atomic_bool init{ false };
-
-	std::map<LIGHT, RE::BGSDebrisData*> debrisDataMap;
-	std::map<LIGHT, RE::BGSDebris*> debrisMap;
+	std::once_flag init;
+	std::unordered_map<LIGHT, std::unique_ptr<RE::BGSDebris>> debrisMap;
 };

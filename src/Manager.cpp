@@ -1,7 +1,7 @@
 #include "Manager.h"
 #include "Settings.h"
 
-LightManager::LIGHT LightManager::GetLight(const RE::TESEffectShader* a_effectShader)
+LIGHT LightManager::GetLight(const RE::TESEffectShader* a_effectShader)
 {
 	using Flags = RE::EffectShaderData::Flags;
 
@@ -115,24 +115,19 @@ LightManager::LIGHT LightManager::GetLight(const RE::TESEffectShader* a_effectSh
 
 bool LightManager::ApplyLight(RE::TESEffectShader* a_effectShader)
 {
-	if (!init) {
-		init = true;
-	    for (auto& [type, path] : nif::map) {
-			const auto debrisData = new RE::BGSDebrisData(path.data());
-			if (!debrisData) {
-				continue;
-			}
+	std::call_once(init, [&]() {
+		for (auto& [type, path] : nif::map) {
 			const auto factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::BGSDebris>();
 			const auto debris = factory ? factory->Create() : nullptr;
+
 			if (!debris) {
 				continue;
 			}
-			debris->data.emplace_front(debrisData);
 
-			debrisMap[type] = debris;
-			debrisDataMap[type] = debrisData;
+			debris->data.emplace_front(new RE::BGSDebrisData(path.data()));
+			debrisMap.emplace(type, std::move(debris));
 		}
-	}
+	});
 
 	auto light = Settings::GetSingleton()->GetOverrideLight(a_effectShader);
 	if (light == kNone) {
@@ -140,23 +135,35 @@ bool LightManager::ApplyLight(RE::TESEffectShader* a_effectShader)
 	}
 
 	if (light != kNone) {
-		if (const auto& addonModel = a_effectShader->data.addonModels; !addonModel) {
-			a_effectShader->data.addonModels = debrisMap[light];
+		if (const auto addonModel = a_effectShader->data.addonModels; !addonModel) {
+			a_effectShader->data.addonModels = debrisMap[light].get();
 		} else {
-			static auto limit = Settings::GetSingleton()->numTimesApplied;
-			auto& newDebrisData = debrisDataMap[light];
-
-			const auto it = std::ranges::find_if(addonModel->data, [&](const auto& debrisData) {
-				return string::icontains(debrisData->fileName, "enb\\") || debrisData == newDebrisData;
-			});
-
-		    if (it == addonModel->data.end()) {
-				for (std::uint32_t i = 0; i < limit; i++) {
-					addonModel->data.emplace_front(newDebrisData);
+			if (const auto lightDebris = debrisMap[light].get()) {
+				const auto it = std::ranges::find_if(addonModel->data, [&](const auto& debrisData) {
+					return string::icontains(debrisData->fileName, "enb\\") || debrisData == lightDebris->data.front();
+				});
+				if (it == addonModel->data.end()) {
+					addonModel->data.emplace_front(lightDebris->data.front());
 				}
 			}
 		}
+		
+		if (a_effectShader->data.addonModels) {
+			if (a_effectShader->IsDynamicForm()) {
+				logger::info("{} [0x{:X}]", clib_util::editorID::get_editorID(a_effectShader), a_effectShader->GetFormID());
+			} else {
+				logger::info("{} [0x{:X}~{}]", clib_util::editorID::get_editorID(a_effectShader), a_effectShader->GetLocalFormID(), a_effectShader->GetFile(0)->fileName);
+			}
+
+			for (auto& model : a_effectShader->data.addonModels->data) {
+				if (model) {
+					logger::info("\t{}", model->fileName);
+				}
+			}
+		}
+
 		return true;
 	}
+
 	return false;
 }

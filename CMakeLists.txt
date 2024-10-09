@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 set(NAME "po3_ENBLightForEffectShaders" CACHE STRING "")
-set(VERSION 2.1.0 CACHE STRING "")
+set(VERSION 2.2.0 CACHE STRING "")
 set(AE_VERSION 1)
 set(VR_VERSION 1)
 
@@ -131,7 +131,6 @@ else()
 endif()
 
 find_package(frozen CONFIG REQUIRED)
-find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
 find_path(CLIB_UTIL_INCLUDE_DIRS "ClibUtil/utils.hpp")
 find_path(MERGEMAPPER_INCLUDE_DIRS "MergeMapperPluginAPI.h")
 
@@ -184,7 +183,6 @@ target_include_directories(
 	PRIVATE
 	${CMAKE_CURRENT_BINARY_DIR}/include
 	${CMAKE_CURRENT_SOURCE_DIR}/src
-	${SIMPLEINI_INCLUDE_DIRS}
 	${CLIB_UTIL_INCLUDE_DIRS}
 	${MERGEMAPPER_INCLUDE_DIRS}
 )
@@ -242,24 +240,4 @@ if(COPY_BUILD)
 			"Variable ${SkyrimPath} is not defined. Skipping post-build copy command."
 		)
 	endif()
-endif()
-
-# https://gitlab.kitware.com/cmake/cmake/-/issues/24922#note_1371990
-if(MSVC_VERSION GREATER_EQUAL 1936 AND MSVC_IDE) # 17.6+
-	# When using /std:c++latest, "Build ISO C++23 Standard Library Modules" defaults to "Yes".
-	# Default to "No" instead.
-	#
-	# As of CMake 3.26.4, there isn't a way to control this property
-	# (https://gitlab.kitware.com/cmake/cmake/-/issues/24922),
-	# We'll use the MSBuild project system instead
-	# (https://learn.microsoft.com/en-us/cpp/build/reference/vcxproj-file-structure)
-	file(CONFIGURE OUTPUT "${CMAKE_BINARY_DIR}/Directory.Build.props" CONTENT [==[
-<Project>
-  <ItemDefinitionGroup>
-    <ClCompile>
-      <BuildStlModules>false</BuildStlModules>
-    </ClCompile>
-  </ItemDefinitionGroup>
-</Project>
-]==] @ONLY)
 endif()
