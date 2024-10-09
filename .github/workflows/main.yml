@@ -14,6 +14,8 @@ jobs:
     if: github.repository_owner == 'powerof3'
     uses: adya/pack-skse-mod/.github/workflows/pack.yml@main
     with:
+      CMAKE_VR_CONFIG_PRESET: ''
+      CMAKE_VR_BUILD_PRESET: ''
       FOMOD_INCLUDE_PDB: true
       FOMOD_MOD_NAME: "ENB Lights For Effect Shaders"
       FOMOD_MOD_AUTHOR: "powerofthree"
