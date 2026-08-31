@@ -95,7 +95,7 @@ LIGHT LightManager::GetLight(const RE::TESEffectShader* a_effectShader)
 		}
 
 		std::int32_t max_count = -1;
-		LIGHT finalLight = kNone;
+		LIGHT        finalLight = kNone;
 		for (const auto& [light, count] : hash) {
 			if (max_count < count) {
 				finalLight = light;
@@ -116,6 +116,8 @@ LIGHT LightManager::GetLight(const RE::TESEffectShader* a_effectShader)
 bool LightManager::ApplyLight(RE::TESEffectShader* a_effectShader)
 {
 	std::call_once(init, [&]() {
+		auto& formArray = RE::TESDataHandler::GetSingleton()->GetFormArray<RE::BGSDebris>();
+
 		for (auto& [type, path] : nif::map) {
 			const auto factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::BGSDebris>();
 			const auto debris = factory ? factory->Create() : nullptr;
@@ -124,8 +126,14 @@ bool LightManager::ApplyLight(RE::TESEffectShader* a_effectShader)
 				continue;
 			}
 
-			debris->data.emplace_front(new RE::BGSDebrisData(path.data()));
-			debrisMap.emplace(type, std::move(debris));
+			auto gamePath = MakeGameStr(path);
+			if (REX::STR::IS_EMPTY(gamePath)) {
+				continue;
+			}
+			debris->data.emplace_front(new RE::BGSDebrisData(gamePath));
+			formArray.push_back(debris);
+
+			debrisMap.emplace(type, debris);
 		}
 	});
 
@@ -133,37 +141,49 @@ bool LightManager::ApplyLight(RE::TESEffectShader* a_effectShader)
 	if (light == kNone) {
 		light = GetLight(a_effectShader);
 	}
-
-	if (light != kNone) {
-		if (const auto addonModel = a_effectShader->data.addonModels; !addonModel) {
-			a_effectShader->data.addonModels = debrisMap[light].get();
-		} else {
-			if (const auto lightDebris = debrisMap[light].get()) {
-				const auto it = std::ranges::find_if(addonModel->data, [&](const auto& debrisData) {
-					return REX::STR::ICONTAINS(debrisData->fileName, "enb\\") || debrisData == lightDebris->data.front();
-				});
-				if (it == addonModel->data.end()) {
-					addonModel->data.emplace_front(lightDebris->data.front());
-				}
-			}
-		}
-		
-		if (a_effectShader->data.addonModels) {
-			if (a_effectShader->IsDynamicForm()) {
-				REX::INFO("{} [0x{:X}]", clib_util::editorID::get_editorID(a_effectShader), a_effectShader->GetFormID());
-			} else {
-				REX::INFO("{} [0x{:X}~{}]", clib_util::editorID::get_editorID(a_effectShader), a_effectShader->GetLocalFormID(), a_effectShader->GetFile(0)->fileName);
-			}
-
-			for (auto& model : a_effectShader->data.addonModels->data) {
-				if (model) {
-					REX::INFO("\t{}", model->fileName);
-				}
-			}
-		}
-
-		return true;
+	if (light == kNone) {
+		return false;
 	}
 
-	return false;
+	const auto it = debrisMap.find(light);
+	if (it == debrisMap.end() || !it->second) {
+		return false;
+	}
+
+	const auto lightDebris = it->second;
+
+	if (!a_effectShader->data.addonModels) {
+		a_effectShader->data.addonModels = lightDebris;
+	} else {
+		const auto& path = nif::map.at(light);
+
+		auto&      models = a_effectShader->data.addonModels->data;
+		const auto found = std::ranges::find_if(models, [&](const auto& debrisData) {
+			return debrisData && (REX::STR::ICONTAINS(debrisData->fileName, "enb\\") ||
+									 REX::STR::IEQUALS(debrisData->fileName, path));
+		});
+
+		if (found == models.end()) {
+			auto gamePath = MakeGameStr(path);
+			if (!REX::STR::IS_EMPTY(gamePath)) {
+				a_effectShader->data.addonModels->data.emplace_front(new RE::BGSDebrisData(gamePath));
+			}
+		}
+	}
+
+	if (a_effectShader->data.addonModels) {
+		if (a_effectShader->IsDynamicForm()) {
+			REX::INFO("{} [0x{:X}]", clib_util::editorID::get_editorID(a_effectShader), a_effectShader->GetFormID());
+		} else {
+			REX::INFO("{} [0x{:X}~{}]", clib_util::editorID::get_editorID(a_effectShader), a_effectShader->GetLocalFormID(), a_effectShader->GetFile(0)->fileName);
+		}
+
+		for (auto& model : a_effectShader->data.addonModels->data) {
+			if (model) {
+				REX::INFO("\t{}", model->fileName);
+			}
+		}
+	}
+
+	return true;
 }

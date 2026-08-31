@@ -28,9 +28,19 @@ class LightManager : public REX::TSingleton<LightManager>
 {
 public:
 	static LIGHT GetLight(const RE::TESEffectShader* a_effectShader);
-	bool ApplyLight(RE::TESEffectShader* a_effectShader);
+	bool         ApplyLight(RE::TESEffectShader* a_effectShader);
 
 private:
+	const char* MakeGameStr(std::string_view a_str)
+	{
+		auto buf = RE::malloc<char>(a_str.size() + 1);
+		if (buf) {
+			std::memcpy(buf, a_str.data(), a_str.size());
+			buf[a_str.size()] = '\0';
+		}
+		return buf;
+	}
+	
 	struct color
 	{
 		using RGB = std::array<std::uint8_t, 3>;
@@ -197,6 +207,6 @@ private:
 		};
 	};
 
-	std::once_flag init;
-	std::unordered_map<LIGHT, std::unique_ptr<RE::BGSDebris>> debrisMap;
+	std::once_flag                            init;
+	std::unordered_map<LIGHT, RE::BGSDebris*> debrisMap;
 };
