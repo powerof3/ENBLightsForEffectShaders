@@ -31,21 +31,21 @@ void Settings::LoadOverrideSettings()
 	std::vector<std::string> configs = clib_util::distribution::get_configs("Data\\"sv, "_ENBL"sv);
 
 	if (configs.empty()) {
-		logger::warn("No .ini files with _ENBL suffix were found within the Data folder. Overrides will not be loaded");
+		REX::WARN("No .ini files with _ENBL suffix were found within the Data folder. Overrides will not be loaded");
 		return;
 	}
 
-	logger::info("{} matching inis found", configs.size());
+	REX::INFO("{} matching inis found", configs.size());
 
 	for (auto& path : configs) {
-		logger::info("\tINI : {}", path);
+		REX::INFO("\tINI : {}", path);
 
 		CSimpleIniA ini;
 		ini.SetUnicode();
 		ini.SetMultiKey();
 
 		if (const auto rc = ini.LoadFile(path.c_str()); rc < 0) {
-			logger::error("\tcouldn't read INI");
+			REX::ERROR("\tcouldn't read INI");
 			continue;
 		}
 
@@ -89,7 +89,7 @@ void get_merged_IDs(std::optional<RE::FormID>& a_formID, std::optional<std::stri
 		a_modName.emplace(mergedModName);
 	}
 	if (!conversion_log.empty()) {
-		logger::info("\t\tFound merged: {}", conversion_log);
+		REX::INFO("\t\tFound merged: {}", conversion_log);
 	}
 }
 
@@ -97,7 +97,7 @@ void Settings::LoadBlacklist()
 {
 	const auto dataHandler = RE::TESDataHandler::GetSingleton();
 
-	logger::info("loading blacklist");
+	REX::INFO("loading blacklist");
 
 	for (const auto& ID : blacklistedIDs) {
 		std::visit(overload{
@@ -110,7 +110,7 @@ void Settings::LoadBlacklist()
 							   if (const RE::TESFile* filterMod = dataHandler->LookupModByName(*modName); filterMod) {
 								   blacklistedShaders.insert(filterMod);
 							   } else {
-								   logger::warn("\tmod ({}) not found", *modName);
+								   REX::WARN("\tmod ({}) not found", *modName);
 							   }
 						   } else if (formID) {
 							   auto effectShader = modName ?
@@ -119,7 +119,7 @@ void Settings::LoadBlacklist()
 							   if (effectShader) {
 								   blacklistedShaders.insert(effectShader);
 							   } else {
-								   logger::warn("\teffect shader (0x{:X}~{}) not found", *formID, modName ? *modName : "");
+								   REX::WARN("\teffect shader (0x{:X}~{}) not found", *formID, modName ? *modName : "");
 							   }
 						   }
 					   },
@@ -127,20 +127,20 @@ void Settings::LoadBlacklist()
 						   if (auto effectShader = RE::TESForm::LookupByEditorID<RE::TESEffectShader>(editorID); effectShader) {
 							   blacklistedShaders.insert(effectShader);
 						   } else {
-							   logger::warn("\teffect shader ({}) not found", editorID);
+							   REX::WARN("\teffect shader ({}) not found", editorID);
 						   }
 					   } },
 			ID);
 	}
 
-	logger::info("blacklist count : {}/{}", blacklistedShaders.size(), blacklistedIDs.size());
+	REX::INFO("blacklist count : {}/{}", blacklistedShaders.size(), blacklistedIDs.size());
 }
 
 void Settings::LoadOverrideShaders()
 {
 	const auto dataHandler = RE::TESDataHandler::GetSingleton();
 
-	logger::info("loading override list");
+	REX::INFO("loading override list");
 
 	for (auto& [ID, light] : overridenIDs) {
 		std::visit(overload{
@@ -156,20 +156,20 @@ void Settings::LoadOverrideShaders()
 						   if (effectShader) {
 							   overridenShaders.emplace(effectShader, light);
 						   } else {
-							   logger::warn("\teffect shader (0x{:X}~{}) not found", *formID, modName ? *modName : "");
+							   REX::WARN("\teffect shader (0x{:X}~{}) not found", *formID, modName ? *modName : "");
 						   }
 					   },
 					   [&](std::string editorID) {
 						   if (auto effectShader = RE::TESForm::LookupByEditorID<RE::TESEffectShader>(editorID); effectShader) {
 							   overridenShaders.emplace(effectShader, light);
 						   } else {
-							   logger::warn("\teffect shader ({}) not found", editorID);
+							   REX::WARN("\teffect shader ({}) not found", editorID);
 						   }
 					   } },
 			ID);
 	}
 
-	logger::info("override shader count : {}/{}", overridenShaders.size(), overridenIDs.size());
+	REX::INFO("override shader count : {}/{}", overridenShaders.size(), overridenIDs.size());
 }
 
 bool Settings::IsInBlacklist(RE::TESEffectShader* a_effectShader)

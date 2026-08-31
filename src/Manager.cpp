@@ -6,16 +6,16 @@ LIGHT LightManager::GetLight(const RE::TESEffectShader* a_effectShader)
 	using Flags = RE::EffectShaderData::Flags;
 
 	const auto has_particle_palette = [&](std::string_view a_path) {
-		return string::icontains(a_effectShader->particlePaletteTexture.textureName, a_path);
+		return REX::STR::ICONTAINS(a_effectShader->particlePaletteTexture.textureName, a_path);
 	};
 	const auto has_membrane_palette = [&](std::string_view a_path) {
-		return string::icontains(a_effectShader->membranePaletteTexture.textureName, a_path);
+		return REX::STR::ICONTAINS(a_effectShader->membranePaletteTexture.textureName, a_path);
 	};
 	const auto has_particle_shader = [&](std::string_view a_path) {
-		return string::icontains(a_effectShader->particleShaderTexture.textureName, a_path);
+		return REX::STR::ICONTAINS(a_effectShader->particleShaderTexture.textureName, a_path);
 	};
 	const auto has_membrane_shader = [&](std::string_view a_path) {
-		return string::icontains(a_effectShader->fillTexture.textureName, a_path);
+		return REX::STR::ICONTAINS(a_effectShader->fillTexture.textureName, a_path);
 	};
 
 	for (auto& texture : texture::blacklistedShaders.second) {
@@ -140,7 +140,7 @@ bool LightManager::ApplyLight(RE::TESEffectShader* a_effectShader)
 		} else {
 			if (const auto lightDebris = debrisMap[light].get()) {
 				const auto it = std::ranges::find_if(addonModel->data, [&](const auto& debrisData) {
-					return string::icontains(debrisData->fileName, "enb\\") || debrisData == lightDebris->data.front();
+					return REX::STR::ICONTAINS(debrisData->fileName, "enb\\") || debrisData == lightDebris->data.front();
 				});
 				if (it == addonModel->data.end()) {
 					addonModel->data.emplace_front(lightDebris->data.front());
@@ -150,14 +150,14 @@ bool LightManager::ApplyLight(RE::TESEffectShader* a_effectShader)
 		
 		if (a_effectShader->data.addonModels) {
 			if (a_effectShader->IsDynamicForm()) {
-				logger::info("{} [0x{:X}]", clib_util::editorID::get_editorID(a_effectShader), a_effectShader->GetFormID());
+				REX::INFO("{} [0x{:X}]", clib_util::editorID::get_editorID(a_effectShader), a_effectShader->GetFormID());
 			} else {
-				logger::info("{} [0x{:X}~{}]", clib_util::editorID::get_editorID(a_effectShader), a_effectShader->GetLocalFormID(), a_effectShader->GetFile(0)->fileName);
+				REX::INFO("{} [0x{:X}~{}]", clib_util::editorID::get_editorID(a_effectShader), a_effectShader->GetLocalFormID(), a_effectShader->GetFile(0)->fileName);
 			}
 
 			for (auto& model : a_effectShader->data.addonModels->data) {
 				if (model) {
-					logger::info("\t{}", model->fileName);
+					REX::INFO("\t{}", model->fileName);
 				}
 			}
 		}

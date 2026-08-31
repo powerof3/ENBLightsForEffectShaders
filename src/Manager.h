@@ -24,7 +24,7 @@ enum LIGHT : std::uint32_t
 	kTurnUndead
 };
 
-class LightManager : public ISingleton<LightManager>
+class LightManager : public REX::TSingleton<LightManager>
 {
 public:
 	static LIGHT GetLight(const RE::TESEffectShader* a_effectShader);
@@ -89,7 +89,7 @@ private:
 			}
 
 			const auto it = std::ranges::find_if(distMap, [shortestDistance](const auto& mo) {
-				return numeric::essentially_equal(mo.second, shortestDistance);
+				return REX::FLT::ESSENTIALLY_EQUAL(mo.second, shortestDistance);
 			});
 			if (it != distMap.end()) {
 				return *it;

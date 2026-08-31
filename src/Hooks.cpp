@@ -54,7 +54,7 @@ namespace ENBLight
 
 	void InstallOnPostLoad()
 	{
-		logger::info("{:*^30}", "CONFIG");
+		REX::INFO("{:*^30}", "CONFIG");
 		
 		const auto settings = Settings::GetSingleton();
 
@@ -67,7 +67,7 @@ namespace ENBLight
 
 	void InstallOnDataLoad()
 	{
-		logger::info("{:*^30}", "OVERRIDES");
+		REX::INFO("{:*^30}", "OVERRIDES");
 		
 		const auto settings = Settings::GetSingleton();
 
@@ -82,7 +82,7 @@ namespace ENBLight
 			       !settings->IsInBlacklist(a_effectShader);
 		};
 
-		logger::info("{:*^30}", "EFFECT SHADERS");
+		REX::INFO("{:*^30}", "EFFECT SHADERS");
 		
 		for (const auto& effectShader : RE::TESDataHandler::GetSingleton()->GetFormArray<RE::TESEffectShader>()) {
 			if (effectShader && can_be_applied_to(effectShader)) {

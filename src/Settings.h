@@ -2,7 +2,7 @@
 
 #include "Manager.h"
 
-class Settings : public ISingleton<Settings>
+class Settings : public REX::TSingleton<Settings>
 {
 public:
 	enum VALID_ACTORS : std::uint32_t
@@ -52,7 +52,7 @@ private:
 			dist::record ID{};
 			LIGHT light{ LIGHT::kNone };
 
-			if (const auto splitStr = string::split(string::trim_copy(a_str), "|"); splitStr.size() > 1) {
+			if (const auto splitStr = REX::STR::SPLIT(REX::STR::TRIM_COPY(a_str), "|"); splitStr.size() > 1) {
 				ID = dist::get_record(splitStr[0]);
 				if (const auto it = enumMap.find(splitStr[1]); it != enumMap.end()) {
 					light = it->second;
